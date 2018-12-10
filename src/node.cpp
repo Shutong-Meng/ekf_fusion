@@ -82,7 +82,7 @@ void publish_pose(Pose_ekf pose_ekf)
     Vector3d p, v, bw, ba;
     pose_ekf.getState(q, p, v, bw, ba);  //get ekf state
     pose.header.stamp = ros::Time(pose_ekf.get_time());
-    pose.header.frame_id = "/world";
+    pose.header.frame_id = "world";
     pose.pose.orientation.w = q.w();
     pose.pose.orientation.x = q.x();
     pose.pose.orientation.y = q.y();
@@ -105,12 +105,16 @@ int main(int argc, char **argv)
     pub_vio_pose = n.advertise<geometry_msgs::PoseStamped>("/ekf/pose", 1000);
     //ros::Rate r(10);  //hz
     ros::Subscriber sub_imu = n.subscribe("/imu0", 1000, preintegration);
-    ros::Subscriber sub_slam = n.subscribe("/vio/slam_viz", 1000, slam);
+    ros::Subscriber sub_slam = n.subscribe("/Stereo/position", 1000, slam);
     ros::Rate r(50);
 
     while(ros::ok())
     {
     ros::spinOnce();
+    //cout<<imu_q.empty()<<endl;
+    if(!imu_q.empty()&&!slam_q.empty())
+   
+    //cout<<imu_q.empty()<<endl;
     publish_pose(pose_ekf); //ekf class
 
     r.sleep();
