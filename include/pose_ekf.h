@@ -57,36 +57,25 @@ private:
 	const Vector3d GRAVITY = Vector3d(0, 0, 9.8);
 	//covariance parameter
 	const double fix_cov = 2.0;
-	const double sonar_height_cov = 0.2;
-	const double fix_velocity_cov = 2.0;
 	
 	const double gyro_cov = 0.01;
 	const double acc_cov = 0.1;
 
 	const double gravity_cov = 5.0;
-	const double mag_cov = 5.0;
 
 	const int n_state = 16;
 
 	//const MatrixXd R_fix = Matrix2d::Identity()*fix_cov;
 	const MatrixXd R_fix = Matrix3d::Identity()*fix_cov;
-	const MatrixXd R_fix_velocity = Matrix3d::Identity()*fix_velocity_cov;
-	const MatrixXd R_sonar_height = MatrixXd::Identity(1, 1)*sonar_height_cov;
-	const MatrixXd R_magnetic = Matrix3d::Identity()*mag_cov;
 	const MatrixXd R_gravity = Matrix3d::Identity()*gravity_cov;
 
 	Vector3d acc;
 	Vector3d gyro;
 
-	Vector3d referenceMagneticField_;
 	double current_t;
-	bool initialized;
 
-	bool fix_initialized;
-	bool imu_initialized;
-	bool altimeter_initialized;
-	bool sonar_initialized;
-	bool magnetic_initialized;
+	bool initialized;
+	//bool imu_initialized;
 	
 };
 

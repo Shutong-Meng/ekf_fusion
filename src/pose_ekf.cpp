@@ -97,11 +97,7 @@ Pose_ekf::Pose_ekf()
 
 
 	initialized = false;
-	fix_initialized = false;
-	imu_initialized = false;
-	altimeter_initialized = false;
-	sonar_initialized = false;
-	magnetic_initialized = false;
+	//imu_initialized = false;
 }
 
 Pose_ekf::~Pose_ekf()
@@ -112,9 +108,10 @@ Pose_ekf::~Pose_ekf()
 
 void Pose_ekf::predict(Vector3d gyro, Vector3d acc, double t)
 {
-	if(!imu_initialized)
+	if(!initialized)
 	{
-		imu_initialized = true; initialized = true;
+		//imu_initialized = true; 
+		initialized = true;
 		this->current_t = t;
 		double phy = atan2(acc(1), acc(2));
 		double theta = atan2(-acc(0), acc(2));
@@ -127,8 +124,8 @@ void Pose_ekf::predict(Vector3d gyro, Vector3d acc, double t)
 	if(t <= current_t) return;
 
 	double dt = t - current_t;
-	VectorXd xdot(n_state);
-	MatrixXd F(n_state, n_state);
+	VectorXd xdot(n_state);//16*1 predicted state
+	MatrixXd F(n_state, n_state);//16*16
 	MatrixXd G(n_state, 6);//G = dx/du
 
 	process(gyro, acc, xdot, F, G);
@@ -290,48 +287,8 @@ void Pose_ekf::correct(VectorXd z, VectorXd zhat, MatrixXd H, MatrixXd R)
 // 	measurement_fix_velocity(zhat, H);
 // 	correct(z, zhat, H, R_fix_velocity);
 // }
-// void Pose_ekf::correct_sonar_height(double sonar_height, double t)
-// {
-// 	if(!initialized)
-// 	{
-// 		initialized = true;
-// 		this->current_t = t;
-// 		return;
-// 	}
 
-// 	if(t < current_t) return;	
-// 	predict(this->gyro, this->acc, t);
 
-// 	VectorXd z(1);
-// 	z(0) = sonar_height;
-// 	VectorXd zhat(1);
-// 	MatrixXd H;
-
-// 	measurement_sonar_height(zhat, H);
-// 	correct(z, zhat, H, R_sonar_height);
-// }
-
-// void Pose_ekf::correct_magnetic_field(Vector3d mag, double t)
-// {
-// 	if(!magnetic_initialized)
-// 	{
-// 		//note, mag in ENU should be [0 1 x], but for the simulated data it is [1 0 x], maybe a bug
-// 		referenceMagneticField_(0) = mag.head(2).norm();//todo
-// 		referenceMagneticField_(1) = 0;
-// 		referenceMagneticField_(2) = mag(2);
-// 		magnetic_initialized = true;
-// 		current_t = t;
-// 		return;
-// 	}
-// 	if(t < current_t) return;
-// 	predict(this->gyro, this->acc, t);
-	
-// 	Vector3d z = mag;
-// 	Vector3d zhat;
-// 	MatrixXd H;
-// 	measurement_magnetic_field(zhat, H);
-// 	correct(z, zhat, H, R_magnetic);
-// }
 
 void Pose_ekf::measurement_slam(Vector3d& position, MatrixXd &H)
 {
@@ -350,7 +307,7 @@ void Pose_ekf::correct_slam(Vector3d pos, double t)
 
 	if(t < current_t) return;
 	
-	predict(this->gyro, this->acc, t);
+	predict(this->gyro, this->acc, t); //????
 	
 	Vector3d p = pos;
 	Vector3d zhat;

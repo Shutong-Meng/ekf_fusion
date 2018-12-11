@@ -106,7 +106,7 @@ int main(int argc, char **argv)
     //ros::Rate r(10);  //hz
     ros::Subscriber sub_imu = n.subscribe("/imu0", 1000, preintegration);
     ros::Subscriber sub_slam = n.subscribe("/Stereo/position", 1000, slam);
-    ros::Rate r(50);
+    ros::Rate r(20);
 
     while(ros::ok())
     {
