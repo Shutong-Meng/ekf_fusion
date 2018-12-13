@@ -25,7 +25,7 @@ nav_msgs::Path path;
 
 static int imu_cnt = 0;
 deque< pair<double, sensor_msgs::Imu> > imu_q;
-deque< pair<double, geometry_msgs::PointStamped> > slam_q;
+deque< pair<double, geometry_msgs::PoseStamped> > slam_q;
 
 void preintegration(const sensor_msgs::Imu::ConstPtr& msg)
 {
@@ -37,7 +37,7 @@ void preintegration(const sensor_msgs::Imu::ConstPtr& msg)
     //part of publish_pose function is originally here
 }
 
-void slam(const geometry_msgs::PointStamped::ConstPtr& msg)
+void slam(const geometry_msgs::PoseStamped::ConstPtr& msg)
 {
 
    
@@ -68,12 +68,17 @@ void publish_pose(Pose_ekf pose_ekf)
 
     //measurement update  xuyaotianjia q bufen  xianzaizhiyouweizhi
     double tt = slam_q.front().first;
-    geometry_msgs::PointStamped smsg = slam_q.front().second;
+    geometry_msgs::PoseStamped smsg = slam_q.front().second;  //modify here begin!!!
     Vector3d position;
-    position(0)=smsg.point.x;
-    position(1)=smsg.point.y;
-    position(2)=smsg.point.z;
-    pose_ekf.correct_slam(position, tt);
+    position(0)=smsg.pose.position.x;
+    position(1)=smsg.pose.position.y;
+    position(2)=smsg.pose.position.z;
+    Quaterniond sq;
+    sq.w()=smsg.pose.orientation.w;
+    sq.x()=smsg.pose.orientation.x;
+    sq.y()=smsg.pose.orientation.y;
+    sq.z()=smsg.pose.orientation.z;
+    pose_ekf.correct_slam(position, sq, tt);
     slam_q.pop_front();
 
     //publish pose and path

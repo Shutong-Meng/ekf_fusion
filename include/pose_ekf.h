@@ -33,10 +33,10 @@ public:
 	// void measurement_sonar_height(VectorXd& sonar_height, MatrixXd& H);
 	// void measurement_magnetic_field(Vector3d& magnetic_field, MatrixXd& H);
 	void measurement_gravity(Vector3d& acc, MatrixXd& H);
-	void measurement_slam(Vector3d& position, MatrixXd &H);
+	void measurement_slam(VectorXd& pose, MatrixXd &H);
 
 	//zidingyi
-	void correct_slam(Vector3d pos, double t);
+	void correct_slam(Vector3d pos, Quaterniond q, double t);
 	void correct(VectorXd z, VectorXd zhat, MatrixXd H, MatrixXd R);
 
 
@@ -53,10 +53,10 @@ private:
 	VectorXd x;//state 
 	MatrixXd P;//covariance
 	MatrixXd Q;//imu observation noise
-
+	const MatrixXd R_fix = MatrixXd::Identity(7,7)*fix_cov;;
 	const Vector3d GRAVITY = Vector3d(0, 0, 9.8);
 	//covariance parameter
-	const double fix_cov = 2.0;
+	const double fix_cov = 5.0;
 	
 	const double gyro_cov = 0.01;
 	const double acc_cov = 0.1;
@@ -66,7 +66,7 @@ private:
 	const int n_state = 16;
 
 	//const MatrixXd R_fix = Matrix2d::Identity()*fix_cov;
-	const MatrixXd R_fix = Matrix3d::Identity()*fix_cov;
+	
 	const MatrixXd R_gravity = Matrix3d::Identity()*gravity_cov;
 
 	Vector3d acc;
