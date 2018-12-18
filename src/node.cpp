@@ -47,59 +47,64 @@ void slam(const geometry_msgs::PoseStamped::ConstPtr& msg)
     //part of publish_pose function is originally here
 }
 
-void publish_pose(Pose_ekf pose_ekf)
+void publish_pose(Pose_ekf& pose_ekf)
 {
 
     //...imu_q need data processing   return to pose_ekf
     double t = imu_q.front().first;
     sensor_msgs::Imu msg = imu_q.front().second;
-    Vector3d acc, gyro;
-    acc(0) = msg.linear_acceleration.x;
-    acc(1) = msg.linear_acceleration.y;
-    acc(2) = msg.linear_acceleration.z;
-    gyro(0) = msg.angular_velocity.x;
-    gyro(1) = msg.angular_velocity.y;
-    gyro(2) = msg.angular_velocity.z;
-    pose_ekf.predict(gyro, acc, t);
-    imu_cnt++;
-    if(imu_cnt % 10 == 0) 
-        pose_ekf.correct_gravity(acc, t);
+    Vector3d acce, gyros;
+    acce(0) = msg.linear_acceleration.x;
+    acce(1) = msg.linear_acceleration.y;
+    acce(2) = msg.linear_acceleration.z;
+    gyros(0) = msg.angular_velocity.x;
+    gyros(1) = msg.angular_velocity.y;
+    gyros(2) = msg.angular_velocity.z;
+    cout<<"acce is \n"<<acce<<endl;
+    cout<<"t is \n"<<t<<endl;
     imu_q.pop_front();
+    if(pose_ekf.predict(gyros, acce, t))
+    // imu_cnt++;
+    // if(imu_cnt % 10 == 0) 
+    //     pose_ekf.correct_gravity(acc, t);
+    {   
+    
 
-    //measurement update  xuyaotianjia q bufen  xianzaizhiyouweizhi
-    double tt = slam_q.front().first;
-    geometry_msgs::PoseStamped smsg = slam_q.front().second;  //modify here begin!!!
-    Vector3d position;
-    position(0)=smsg.pose.position.x;
-    position(1)=smsg.pose.position.y;
-    position(2)=smsg.pose.position.z;
-    Quaterniond sq;
-    sq.w()=smsg.pose.orientation.w;
-    sq.x()=smsg.pose.orientation.x;
-    sq.y()=smsg.pose.orientation.y;
-    sq.z()=smsg.pose.orientation.z;
-    pose_ekf.correct_slam(position, sq, tt);
-    slam_q.pop_front();
+        //measurement update  xuyaotianjia q bufen  xianzaizhiyouweizhi
+        double tt = slam_q.front().first;
+        geometry_msgs::PoseStamped smsg = slam_q.front().second;  //modify here begin!!!
+        Vector3d position;
+        position(0)=smsg.pose.position.x;
+        position(1)=smsg.pose.position.y;
+        position(2)=smsg.pose.position.z;
+        Quaterniond sq;
+        sq.w()=smsg.pose.orientation.w;
+        sq.x()=smsg.pose.orientation.x;
+        sq.y()=smsg.pose.orientation.y;
+        sq.z()=smsg.pose.orientation.z;
+        pose_ekf.correct_slam(position, sq, tt);
+        slam_q.pop_front();
 
-    //publish pose and path
-    geometry_msgs::PoseStamped pose;
-    Quaterniond q;
-    Vector3d p, v, bw, ba;
-    pose_ekf.getState(q, p, v, bw, ba);  //get ekf state
-    pose.header.stamp = ros::Time(pose_ekf.get_time());
-    pose.header.frame_id = "world";
-    pose.pose.orientation.w = q.w();
-    pose.pose.orientation.x = q.x();
-    pose.pose.orientation.y = q.y();
-    pose.pose.orientation.z = q.z();
-    pose.pose.position.x = p(0);
-    pose.pose.position.y = p(1);
-    pose.pose.position.z = p(2);
-    pub_vio_pose.publish(pose);
+        //publish pose and path
+        geometry_msgs::PoseStamped pose;
+        Quaterniond q;
+        Vector3d p, v, bw, ba;
+        pose_ekf.getState(q, p, v, bw, ba);  //get ekf state
+        pose.header.stamp = ros::Time(pose_ekf.get_time());
+        pose.header.frame_id = "map";
+        pose.pose.orientation.w = q.w();
+        pose.pose.orientation.x = q.x();
+        pose.pose.orientation.y = q.y();
+        pose.pose.orientation.z = q.z();
+        pose.pose.position.x = p(0);
+        pose.pose.position.y = p(1);
+        pose.pose.position.z = p(2);
+        pub_vio_pose.publish(pose);
 
-    path.header.frame_id ="map";
-    path.poses.push_back(pose);
-    pub_vio_path.publish(path);
+        path.header.frame_id ="map";
+        path.poses.push_back(pose);
+        pub_vio_path.publish(path);
+    }
 }
 
 int main(int argc, char **argv)

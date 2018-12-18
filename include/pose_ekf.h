@@ -20,9 +20,10 @@ class Pose_ekf
 public:
 	Pose_ekf();
 	~Pose_ekf();	
-	void predict(Vector3d gyro, Vector3d acc, double t);
+	bool predict(Vector3d , Vector3d , double );
 	//void correct(Vector3d pos, Vector3d vel, Vector3d mag, double t);
-	void process(Vector3d gyro, Vector3d acc, VectorXd& xdot, MatrixXd& F, MatrixXd& G);
+	//void process(Vector3d gyros, Vector3d acce, VectorXd& xdot, MatrixXd& F, MatrixXd& G, double t);
+	void process(Vector3d , Vector3d , VectorXd& , MatrixXd& , MatrixXd& , double );
 	//MatrixXd computeF(Vector3d gyro, Vector3d acc);
 	
 	//VectorXd measurement(VectorXd x, Vector3d mag);
@@ -56,11 +57,12 @@ private:
 	const MatrixXd R_fix = MatrixXd::Identity(7,7)*fix_cov;;
 	const Vector3d GRAVITY = Vector3d(0, 0, 9.8);
 	//covariance parameter
-	const double fix_cov = 5.0;
+	const double fix_cov = 2.0;
 	
-	const double gyro_cov = 0.01;
-	const double acc_cov = 0.1;
-
+	const double gyro_cov = 1.6968e-04;
+	const double acc_cov = 2.0000e-3;
+	const Vector3d bia = Vector3d(3.0000e-3,3.0000e-3,3.0000e-3);
+	const Vector3d biw = Vector3d(1.9393e-05,1.9393e-05,1.9393e-05);
 	const double gravity_cov = 5.0;
 
 	const int n_state = 16;
@@ -74,7 +76,7 @@ private:
 
 	double current_t;
 
-	bool initialized;
+	bool initialized = false;
 	//bool imu_initialized;
 	
 };
