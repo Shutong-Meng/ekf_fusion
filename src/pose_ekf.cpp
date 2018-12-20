@@ -116,12 +116,12 @@ bool Pose_ekf::predict(Vector3d gyros, Vector3d acce, double t)
 		//imu_initialized = true; 
 		initialized = true;
 		this->current_t = t;
-		// double phy = atan2(acce(1), acce(2));
-		// double theta = atan2(-acce(0), acce(2));
-		// Vector3d rpy(phy, theta, 0);
-		// Quaterniond q = euler2quaternion(rpy);
-		// x(0) = q.w(); 
-		// x.segment<3>(1) = q.vec();
+		double phy = atan2(acce(1), acce(2));
+		double theta = atan2(-acce(0), acce(2));
+		Vector3d rpy(phy, theta, 0);
+		Quaterniond q = euler2quaternion(rpy);
+		x(0) = q.w(); 
+		x.segment<3>(1) = q.vec();
 		cout<<initialized<<endl;
 		return false;
 	}
@@ -141,8 +141,8 @@ bool Pose_ekf::predict(Vector3d gyros, Vector3d acce, double t)
 	//x += xdot*dt;
 
 	cout<<"Imu is \n"<<x<<endl;
-	F = MatrixXd::Identity(n_state, n_state) + F*dt;//continous F and discrete F
-	G = G*dt;
+	F = MatrixXd::Identity(n_state, n_state) + F*dt;//continous F and discrete F  (f)
+	G = G*dt;  //(h)
 	// cout << "G: " << G << endl;
 	// cout << "GQG: " << G*Q*G << endl;
 

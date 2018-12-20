@@ -57,7 +57,7 @@ private:
 	const MatrixXd R_fix = MatrixXd::Identity(7,7)*fix_cov;;
 	const Vector3d GRAVITY = Vector3d(0, 0, 9.8);
 	//covariance parameter
-	const double fix_cov = 2.0;
+	const double fix_cov = 2.0;//smaller and more reliable to measurement.
 	
 	const double gyro_cov = 1.6968e-04;
 	const double acc_cov = 2.0000e-3;
