@@ -126,7 +126,6 @@ bool Pose_ekf::predict(Vector3d gyros, Vector3d acce, double t)
 		return false;
 	}
 
-	cout<<"acce2 is \n"<<acce<<endl;
 
 	if(t <= current_t) 
 		return false;
@@ -135,7 +134,7 @@ bool Pose_ekf::predict(Vector3d gyros, Vector3d acce, double t)
 	//VectorXd xdot(n_state);//16*1 predicted state
 	MatrixXd F(n_state, n_state);//16*16
 	MatrixXd G(n_state, 6);//G = dx/du
-    cout<<"acce3 is \n"<<acce<<endl;
+ 
 	process(gyros, acce, x, F, G, dt);
 	
 	//x += xdot*dt;
@@ -168,26 +167,26 @@ void Pose_ekf::process(Vector3d gyros, Vector3d acce, VectorXd& xt, MatrixXd& F,
 	
 	Quaterniond gyro_q(0, 0, 0, 0);
 	gyro_q.vec() = gyros - bw;
-	cout<<"gyro is \n"<<gyros<<endl;
-	// Quaterniond q_dot = q*gyro_q;
-	// q_dot.w() /= 2; q_dot.vec() /= 2;//* and / to scalar is not support for Quaternion
+	Quaterniond q_dot = q*gyro_q;
+	q_dot.w() *= t/2; q_dot.vec() *= t/2;//* and / to scalar is not support for Quaternion
 	// xdot(0) = q_dot.w(); xdot.segment<3>(1) = q_dot.vec();
 	
-    Vector3d gyro_v= gyros - bw;
-    Quaterniond q_dot = q * Quaterniond(1, gyro_v(0) * t / 2, gyro_v(1) * t / 2, gyro_v(2) * t / 2);
-    xt(0) = q_dot.w(); 
-    xt.segment<3>(1) = q_dot.vec();
+    // Vector3d gyro_v= gyros - bw;
+    // Quaterniond q_dot = q * Quaterniond(1, gyro_v(0) * t / 2, gyro_v(1) * t / 2, gyro_v(2) * t / 2);
+    xt(0) += q_dot.w(); 
+    xt.segment<3>(1) += q_dot.vec();
 
 	Quaterniond acc_b_q(0, 0, 0, 0);
 	acc_b_q.vec() = acce - ba;
-	// Quaterniond acc_n_q =  q*acc_b_q;//*q.inverse();
+	Quaterniond acc_n_q =  q*acc_b_q;//*q.inverse();
+	xt.segment<3>(7) += (acc_n_q.vec() - GRAVITY)*t;
+	xt.segment<3>(4) += (acc_n_q.vec() - GRAVITY)*t*t/2;
 	// xdot.segment<3>(7) = acc_n_q.vec() - GRAVITY;//body frame to n frame 
 
-    Vector3d un_acc = acce-ba;
-    //cout<<"acc is \n"<<acc<<endl;
-    cout<<"un_acc is \n"<<un_acc<<endl;
-    xt.segment<3>(4) = p + v * t + 0.5 * un_acc * t * t;
-    xt.segment<3>(7) = v + un_acc * t;
+    // Vector3d un_acc = acce-ba;
+    // cout<<"un_acc is \n"<<un_acc<<endl;
+    // xt.segment<3>(4) = p + v * t + 0.5 * un_acc * t * t;
+    // xt.segment<3>(7) = v + un_acc * t;
 
 	//xdot.segment<3>(4) = v + xdot.segment<3>(7)*t;
 

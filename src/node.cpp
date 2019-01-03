@@ -60,8 +60,6 @@ void publish_pose(Pose_ekf& pose_ekf)
     gyros(0) = msg.angular_velocity.x;
     gyros(1) = msg.angular_velocity.y;
     gyros(2) = msg.angular_velocity.z;
-    cout<<"acce is \n"<<acce<<endl;
-    cout<<"t is \n"<<t<<endl;
     imu_q.pop_front();
     if(pose_ekf.predict(gyros, acce, t))
     // imu_cnt++;
