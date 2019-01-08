@@ -18,7 +18,7 @@
 using namespace std;
 using namespace Eigen;
 
-Pose_ekf pose_ekf;  //?????
+Pose_ekf pose_ekf;  
 ros::Publisher pub_vio_path;
 ros::Publisher pub_vio_pose;
 nav_msgs::Path path;
@@ -61,14 +61,14 @@ void publish_pose(Pose_ekf& pose_ekf)
     gyros(1) = msg.angular_velocity.y;
     gyros(2) = msg.angular_velocity.z;
     imu_q.pop_front();
-    if(pose_ekf.predict(gyros, acce, t))
-    // imu_cnt++;
-    // if(imu_cnt % 10 == 0) 
-    //     pose_ekf.correct_gravity(acc, t);
-    {   
-    
 
-        //measurement update  xuyaotianjia q bufen  xianzaizhiyouweizhi
+    if(pose_ekf.predict(gyros, acce, t))
+    {
+        imu_cnt++;
+        if(imu_cnt % 10 == 0) 
+            pose_ekf.correct_gravity(acce);//t);
+    
+        //measurement update  
         double tt = slam_q.front().first;
         geometry_msgs::PoseStamped smsg = slam_q.front().second;  //modify here begin!!!
         Vector3d position;
