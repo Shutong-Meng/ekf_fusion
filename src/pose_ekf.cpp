@@ -109,50 +109,46 @@ Pose_ekf::~Pose_ekf()
 }
 
 
-bool Pose_ekf::predict(Vector3d gyros, Vector3d acce, double t)
+void Pose_ekf::predict(Vector3d gyros, Vector3d acce, double t)
 {	
 	if(initialized==false)
 	{
 		//imu_initialized = true; 
 		initialized = true;
 		this->current_t = t;
-		double phy = atan2(acce(1), acce(2));
+		double phy = atan2(acce(1), acce(2));   //tan [-pi,pi]
 		double theta = atan2(-acce(0), acce(2));
 		Vector3d rpy(phy, theta, 0);
 		Quaterniond q = euler2quaternion(rpy);
 		x(0) = q.w(); 
 		x.segment<3>(1) = q.vec();
-		cout<<initialized<<endl;
-		return false;
+		return;
 	}
 
-	cout<<"acce2 is \n"<<acce<<endl;
-
 	if(t <= current_t) 
-		return false;
+		return;
 
-	double dt = t - current_t;
+	double dt = t - current_t;//imu message hz
 	//VectorXd xdot(n_state);//16*1 predicted state
 	MatrixXd F(n_state, n_state);//16*16
 	MatrixXd G(n_state, 6);//G = dx/du
-    cout<<"acce3 is \n"<<acce<<endl;
+ 
 	process(gyros, acce, x, F, G, dt);
-	
 	//x += xdot*dt;
-
-	cout<<"Imu is \n"<<x<<endl;
-	F = MatrixXd::Identity(n_state, n_state) + F*dt;//continous F and discrete F  (f)
-	G = G*dt;  //(h)
-	// cout << "G: " << G << endl;
-	// cout << "GQG: " << G*Q*G << endl;
+	x.head(4).normalize();
+	cout<<"Predict is \n"<<x<<endl;
+	//F = MatrixXd::Identity(n_state, n_state) + F*dt;//continous F and discrete F  (f)
+	// F= F*dt; ???
+	// G = G*dt;  //(h)
+	//cout << "F: " << F*P*F.transpose() << endl;
+	//out << "G: " << G*Q*G.transpose() << endl;
 
 	P = F*P*F.transpose() + G*Q*G.transpose();
-	x.head(4).normalize();
 	
 	this->current_t = t;
 	this->acc = acce;
 	this->gyro = gyros;
-	return true;
+	
 }
 
 //xdot = f(x, u);
@@ -168,27 +164,24 @@ void Pose_ekf::process(Vector3d gyros, Vector3d acce, VectorXd& xt, MatrixXd& F,
 	
 	Quaterniond gyro_q(0, 0, 0, 0);
 	gyro_q.vec() = gyros - bw;
-	cout<<"gyro is \n"<<gyros<<endl;
-	// Quaterniond q_dot = q*gyro_q;
-	// q_dot.w() /= 2; q_dot.vec() /= 2;//* and / to scalar is not support for Quaternion
+	Quaterniond q_dot = q*gyro_q;
+	q_dot.w() *= t/2; q_dot.vec() *= t/2;//* and / to scalar is not support for Quaternion
 	// xdot(0) = q_dot.w(); xdot.segment<3>(1) = q_dot.vec();
-	
-    Vector3d gyro_v= gyros - bw;
-    Quaterniond q_dot = q * Quaterniond(1, gyro_v(0) * t / 2, gyro_v(1) * t / 2, gyro_v(2) * t / 2);
-    xt(0) = q_dot.w(); 
-    xt.segment<3>(1) = q_dot.vec();
+    // Vector3d gyro_v= gyros - bw;
+    // Quaterniond q_dot = q * Quaterniond(1, gyro_v(0) * t / 2, gyro_v(1) * t / 2, gyro_v(2) * t / 2);
+    xt(0) += q_dot.w(); 
+    xt.segment<3>(1) += q_dot.vec();
 
 	Quaterniond acc_b_q(0, 0, 0, 0);
 	acc_b_q.vec() = acce - ba;
-	// Quaterniond acc_n_q =  q*acc_b_q;//*q.inverse();
+	Quaterniond acc_n_q =  q*acc_b_q*q.inverse();
+	xt.segment<3>(7) += (acc_n_q.vec() - GRAVITY)*t;
+	xt.segment<3>(4) += (acc_n_q.vec() - GRAVITY)*t*t/2;
 	// xdot.segment<3>(7) = acc_n_q.vec() - GRAVITY;//body frame to n frame 
-
-    Vector3d un_acc = acce-ba;
-    //cout<<"acc is \n"<<acc<<endl;
-    cout<<"un_acc is \n"<<un_acc<<endl;
-    xt.segment<3>(4) = p + v * t + 0.5 * un_acc * t * t;
-    xt.segment<3>(7) = v + un_acc * t;
-
+    // Vector3d un_acc = acce-ba;
+    // cout<<"un_acc is \n"<<un_acc<<endl;
+    // xt.segment<3>(4) = p + v * t + 0.5 * un_acc * t * t;
+    // xt.segment<3>(7) = v + un_acc * t;
 	//xdot.segment<3>(4) = v + xdot.segment<3>(7)*t;
 
 	F.block<4, 4>(0, 0) = 0.5*diff_pq_p(gyro_q);
@@ -213,39 +206,50 @@ void Pose_ekf::getState(Quaterniond& q, Vector3d& p, Vector3d& v, Vector3d & bw,
 }
 
 
-// void Pose_ekf::measurement_fix(Vector2d& position, MatrixXd &H)
-// {
-// 	position = x.segment<2>(4);
-// 	H = MatrixXd::Zero(2, n_state);
-// 	H.block<2, 2>(0, 4) = Matrix2d::Identity();
-// }
-// void Pose_ekf::measurement_fix_velocity(Vector3d& velocity, MatrixXd& H)
-// {
-// 	velocity = x.segment<3>(7);
-// 	H = MatrixXd::Zero(3, n_state);
-// 	H.block<3, 3>(0, 7) = Matrix3d::Identity();
-// }
 
-// void Pose_ekf::measurement_sonar_height(VectorXd& sonar_height, MatrixXd& H)
-// {
-// 	sonar_height = VectorXd(1);
-// 	sonar_height(0) = x(6);
-// 	H = MatrixXd::Zero(1, n_state);
-// 	H(0, 6) = 1;
-// }
 
-// void Pose_ekf::measurement_magnetic_field(Vector3d& magnetic_field, MatrixXd& H)
-// {
-// 	Quaterniond q;
-// 	q.w() = x(0); q.vec() = x.segment<3>(1);
-// 	Quaterniond ref_mag_q;
-// 	ref_mag_q.w() = 0; ref_mag_q.vec() = referenceMagneticField_;
-// 	Quaterniond magnetic_field_q =  q.inverse()*ref_mag_q*q; //r_n to r_b
-// 	magnetic_field = magnetic_field_q.vec();
+void Pose_ekf::correct(VectorXd z, VectorXd presult, MatrixXd H, MatrixXd R)
+{
+   	MatrixXd K = P*H.transpose()*(H*P*H.transpose() + R).inverse();
+    x += K*(z - presult);
+    //cout<<"P"<<"\n"<<P<<endl;
+    cout<<"correct is"<<"\n"<<K*(z-presult)<<endl;
+    //cout<<"result is"<<"\n"<<x<<endl;
+    MatrixXd I = MatrixXd::Identity(n_state, n_state);
+    P = (I - K*H)*P;
+    x.head(4).normalize();	
+}
 
-// 	H = MatrixXd::Zero(3, n_state);
-// 	H.block<3, 4>(0, 0) = diff_qstarvq_q(q, referenceMagneticField_);
-// }
+void Pose_ekf::measurement_slam(VectorXd& pose, MatrixXd &H)
+{
+	pose = x.segment<7>(0);
+	H = MatrixXd::Zero(7, n_state); //H is used to calculate
+	H.block<7, 7>(0, 0) = MatrixXd::Identity(7,7);
+}
+void Pose_ekf::correct_slam(Vector3d pos, Quaterniond q, double t)
+{
+	if(!initialized)
+	{
+		initialized = true;
+		this->current_t = t;
+		return;
+	}
+	if(t < current_t) return;
+	predict(this->gyro, this->acc, t); //????
+	
+	VectorXd p(7);
+	p(0)= q.w();
+	p(1)= q.x();
+	p(2)= q.y();
+	p(3)= q.z();
+	p(4)= pos(0);
+	p(5)= pos(1);
+	p(6)= pos(2);
+	VectorXd presult;
+	MatrixXd H;
+	measurement_slam(presult, H); //modify
+	correct(p, presult, H, R_fix);
+}
 
 void Pose_ekf::measurement_gravity(Vector3d& acc, MatrixXd& H)
 {
@@ -261,66 +265,7 @@ void Pose_ekf::measurement_gravity(Vector3d& acc, MatrixXd& H)
 	H.block<3, 4>(0, 0) = diff_qstarvq_q(q, GRAVITY);
 }
 
-
-void Pose_ekf::correct(VectorXd z, VectorXd zhat, MatrixXd H, MatrixXd R)
-{
-   	MatrixXd K = P*H.transpose()*(H*P*H.transpose() + R).inverse();
-    x += K*(z - zhat);
-    cout<<"correct is"<<K*(z-zhat)<<endl;
-    cout<<"result is"<<x<<endl;
-    MatrixXd I = MatrixXd::Identity(n_state, n_state);
-    P = (I - K*H)*P;
-    x.head(4).normalize();	
-}
-
-// void Pose_ekf::correct_fix(Vector3d position, double t)
-// {
-// 	if(!initialized)
-// 	{
-// 		initialized = true;
-// 		this->current_t = t;
-// 		return;
-// 	}
-
-// 	if(t < current_t) return;
-	
-// 	predict(this->gyro, this->acc, t);
-// 	double dt = t - current_t;
-// 	Vector2d z = position.head(2);
-// 	Vector2d zhat;
-// 	MatrixXd H;
-// 	measurement_fix(zhat, H);
-// 	correct(z, zhat, H, R_fix);
-// }
-// void Pose_ekf::correct_fix_velocity(Vector3d velocity, double t)
-// {
-// 	if(!initialized)
-// 	{
-// 		initialized = true;
-// 		this->current_t = t;
-// 		return;
-// 	}
-
-// 	if(t < current_t) return;
-	
-// 	predict(this->gyro, this->acc, t);
-	
-// 	Vector3d z = velocity;
-// 	Vector3d zhat;
-// 	MatrixXd H;
-// 	measurement_fix_velocity(zhat, H);
-// 	correct(z, zhat, H, R_fix_velocity);
-// }
-
-
-
-void Pose_ekf::measurement_slam(VectorXd& pose, MatrixXd &H)
-{
-	pose = x.segment<7>(0);
-	H = MatrixXd::Zero(7, n_state);
-	H.block<7, 7>(0, 0) = MatrixXd::Identity(7,7);
-}
-void Pose_ekf::correct_slam(Vector3d pos, Quaterniond q, double t)
+void Pose_ekf::correct_gravity(Vector3d acc)// double t
 {
 	// if(!initialized)
 	// {
@@ -328,37 +273,12 @@ void Pose_ekf::correct_slam(Vector3d pos, Quaterniond q, double t)
 	// 	this->current_t = t;
 	// 	return;
 	// }
-
 	// if(t < current_t) return;
-	//predict(this->gyro, this->acc, t); //????
-	
-	VectorXd p(7);
-	p(0)= q.w();
-	p(1)= q.x();
-	p(2)= q.y();
-	p(3)= q.z();
-	p(4)= pos(0);
-	p(5)= pos(1);
-	p(6)= pos(2);
-	VectorXd zhat;
-	MatrixXd H;
-	measurement_slam(zhat, H); //modify
-	correct(p, zhat, H, R_fix);
-}
-void Pose_ekf::correct_gravity(Vector3d acc, double t)
-{
-	if(!initialized)
-	{
-		initialized = true;
-		this->current_t = t;
-		return;
-	}
-	if(t < current_t) return;
-	predict(this->gyro, this->acc, t);
+	// predict(this->gyro, this->acc, t);
 	
 	Vector3d z = acc/acc.norm();
-	Vector3d zhat;
+	Vector3d presult;
 	MatrixXd H;
-	measurement_gravity(zhat, H);
-	correct(z, zhat, H, R_gravity);
+	measurement_gravity(presult, H);
+	correct(z, presult, H, R_gravity);
 }

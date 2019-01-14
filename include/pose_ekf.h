@@ -20,7 +20,7 @@ class Pose_ekf
 public:
 	Pose_ekf();
 	~Pose_ekf();	
-	bool predict(Vector3d , Vector3d , double );
+	void predict(Vector3d , Vector3d , double );
 	//void correct(Vector3d pos, Vector3d vel, Vector3d mag, double t);
 	//void process(Vector3d gyros, Vector3d acce, VectorXd& xdot, MatrixXd& F, MatrixXd& G, double t);
 	void process(Vector3d , Vector3d , VectorXd& , MatrixXd& , MatrixXd& , double );
@@ -38,7 +38,7 @@ public:
 
 	//zidingyi
 	void correct_slam(Vector3d pos, Quaterniond q, double t);
-	void correct(VectorXd z, VectorXd zhat, MatrixXd H, MatrixXd R);
+	void correct(VectorXd z, VectorXd presult, MatrixXd H, MatrixXd R);
 
 
 	
@@ -46,7 +46,7 @@ public:
 	// void correct_fix_velocity(Vector3d velocity, double t);
 	// void correct_sonar_height(double sonar_height, double t);//todo, without considering the roll and pitch
 	// void correct_magnetic_field(Vector3d mag, double t);
-	void correct_gravity(Vector3d acc, double t);
+	void correct_gravity(Vector3d acc);// double t);
 	// void measurement_altimeter(double& altimeter_height, MatrixXd H);
 	void getState(Quaterniond& q, Vector3d& position, Vector3d& velocity, Vector3d & bw, Vector3d&  ba);
 	double get_time() { return current_t;}
