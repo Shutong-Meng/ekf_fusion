@@ -20,7 +20,7 @@ class Pose_ekf
 public:
 	Pose_ekf();
 	~Pose_ekf();	
-	bool predict(Vector3d , Vector3d , double );
+	void predict(Vector3d , Vector3d , double );
 	//void correct(Vector3d pos, Vector3d vel, Vector3d mag, double t);
 	//void process(Vector3d gyros, Vector3d acce, VectorXd& xdot, MatrixXd& F, MatrixXd& G, double t);
 	void process(Vector3d , Vector3d , VectorXd& , MatrixXd& , MatrixXd& , double );
