@@ -8,6 +8,7 @@ using namespace Eigen;
 Euler angle defination: zyx
 Rotation matrix: C_body2ned
 **/
+
 Quaterniond euler2quaternion(Vector3d euler)
 {
   double cr = cos(euler(0)/2);

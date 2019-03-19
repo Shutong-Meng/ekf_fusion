@@ -20,9 +20,10 @@ class Pose_ekf
 public:
 	Pose_ekf();
 	~Pose_ekf();	
-	void predict(Vector3d gyro, Vector3d acc, double t);
+	void predict(Vector3d , Vector3d , double );
 	//void correct(Vector3d pos, Vector3d vel, Vector3d mag, double t);
-	void process(Vector3d gyro, Vector3d acc, VectorXd& xdot, MatrixXd& F, MatrixXd& G);
+	//void process(Vector3d gyros, Vector3d acce, VectorXd& xdot, MatrixXd& F, MatrixXd& G, double t);
+	void process(Vector3d , Vector3d , VectorXd& , MatrixXd& , MatrixXd& , double );
 	//MatrixXd computeF(Vector3d gyro, Vector3d acc);
 	
 	//VectorXd measurement(VectorXd x, Vector3d mag);
@@ -33,11 +34,11 @@ public:
 	// void measurement_sonar_height(VectorXd& sonar_height, MatrixXd& H);
 	// void measurement_magnetic_field(Vector3d& magnetic_field, MatrixXd& H);
 	void measurement_gravity(Vector3d& acc, MatrixXd& H);
-	void measurement_slam(Vector3d& position, MatrixXd &H);
+	void measurement_slam(VectorXd& pose, MatrixXd &H);
 
 	//zidingyi
-	void correct_slam(Vector3d pos, double t);
-	void correct(VectorXd z, VectorXd zhat, MatrixXd H, MatrixXd R);
+	void correct_slam(Vector3d pos, Quaterniond q, double t);
+	void correct(VectorXd z, VectorXd presult, MatrixXd H, MatrixXd R);
 
 
 	
@@ -53,40 +54,30 @@ private:
 	VectorXd x;//state 
 	MatrixXd P;//covariance
 	MatrixXd Q;//imu observation noise
-
+	const MatrixXd R_fix = MatrixXd::Identity(7,7)*fix_cov;;
 	const Vector3d GRAVITY = Vector3d(0, 0, 9.8);
 	//covariance parameter
-	const double fix_cov = 2.0;
-	const double sonar_height_cov = 0.2;
-	const double fix_velocity_cov = 2.0;
+	const double fix_cov = 0.1;//smaller and more reliable to measurement.
 	
-	const double gyro_cov = 0.01;
-	const double acc_cov = 0.1;
-
+	const double gyro_cov =1.6968e-04;
+	const double acc_cov = 2.0e-3;
+	const Vector3d bia = Vector3d(3.0000e-3,3.0000e-3,3.0000e-3);
+	const Vector3d biw = Vector3d(1.9393e-05,1.9393e-05,1.9393e-05);
 	const double gravity_cov = 5.0;
-	const double mag_cov = 5.0;
 
 	const int n_state = 16;
 
 	//const MatrixXd R_fix = Matrix2d::Identity()*fix_cov;
-	const MatrixXd R_fix = Matrix3d::Identity()*fix_cov;
-	const MatrixXd R_fix_velocity = Matrix3d::Identity()*fix_velocity_cov;
-	const MatrixXd R_sonar_height = MatrixXd::Identity(1, 1)*sonar_height_cov;
-	const MatrixXd R_magnetic = Matrix3d::Identity()*mag_cov;
+	
 	const MatrixXd R_gravity = Matrix3d::Identity()*gravity_cov;
 
 	Vector3d acc;
 	Vector3d gyro;
 
-	Vector3d referenceMagneticField_;
 	double current_t;
-	bool initialized;
 
-	bool fix_initialized;
-	bool imu_initialized;
-	bool altimeter_initialized;
-	bool sonar_initialized;
-	bool magnetic_initialized;
+	bool initialized = false;
+	//bool imu_initialized;
 	
 };
 
