@@ -46,7 +46,7 @@ public:
 	// void correct_fix_velocity(Vector3d velocity, double t);
 	// void correct_sonar_height(double sonar_height, double t);//todo, without considering the roll and pitch
 	// void correct_magnetic_field(Vector3d mag, double t);
-	void correct_gravity(Vector3d acc);// double t);
+	void correct_gravity(Vector3d acc, double t);
 	// void measurement_altimeter(double& altimeter_height, MatrixXd H);
 	void getState(Quaterniond& q, Vector3d& position, Vector3d& velocity, Vector3d & bw, Vector3d&  ba);
 	double get_time() { return current_t;}
@@ -57,10 +57,10 @@ private:
 	const MatrixXd R_fix = MatrixXd::Identity(7,7)*fix_cov;;
 	const Vector3d GRAVITY = Vector3d(0, 0, 9.8);
 	//covariance parameter
-	const double fix_cov = 2.0;//smaller and more reliable to measurement.
+	const double fix_cov = 0.1;//smaller and more reliable to measurement.
 	
-	const double gyro_cov = 1.6968e-04;
-	const double acc_cov = 2.0000e-3;
+	const double gyro_cov =1.6968e-04;
+	const double acc_cov = 2.0e-3;
 	const Vector3d bia = Vector3d(3.0000e-3,3.0000e-3,3.0000e-3);
 	const Vector3d biw = Vector3d(1.9393e-05,1.9393e-05,1.9393e-05);
 	const double gravity_cov = 5.0;
